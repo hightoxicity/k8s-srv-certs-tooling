@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-system-server-certs-submitter-submit-csr
+  namespace: kube-system
+subjects:
+- kind: User
+  name: system:serviceaccount:kube-system:server-certs-submitter
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: csr-submitter
+  apiGroup: rbac.authorization.k8s.io

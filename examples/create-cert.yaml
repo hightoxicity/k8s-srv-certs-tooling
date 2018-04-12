@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-example-cert
+  namespace: kube-system
+spec:
+  template:
+    metadata:
+      name: create-example-cert
+    spec:
+      serviceAccountName: server-certs-submitter
+      automountServiceAccountToken: true
+      restartPolicy: OnFailure
+      containers:
+        - name: create-example-cert
+          image: djnos/k8s-srv-cert-creation:1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CERT_NAME
+              value: example-cert
+            - name: CERTREQ_CNAME
+              value: example-cert.myorg.com
+            - name: CERTREQ_COUNTRY
+              value: FR
+            - name: CERTREQ_STATE
+              value: Paris
+            - name: CERTREQ_LOCATION
+              value: Paris
+            - name: CERTREQ_ORGANIZATION
+              value: MyOrg
+            - name: CERTREQ_EMAIL
+              value: infra@myorg.com
+            - name: FORCE_GENERATION
+              value: "1"
+            - name: CERTREQ_SAN
+              value: "example-cert.myorg.com,alt.example-cert.myorg.com,10.100.20.2"
+          volumeMounts:
+            - name: workingdir
+              mountPath: /wkd
+      volumes:
+        - name: workingdir
+          emptyDir: {}

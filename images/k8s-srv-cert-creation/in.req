@@ -1,0 +1,17 @@
+[req]
+default_bits           = 2048
+distinguished_name     = req_distinguished_name
+prompt                 = no
+req_extensions         = req_ext
+
+[req_ext]
+[[ALTNAMES_PLACEHOLDER]]
+
+[req_distinguished_name]
+C                      = [[CERTREQ_COUNTRY]]
+ST                     = [[CERTREQ_STATE]]
+L                      = [[CERTREQ_LOCATION]]
+O                      = [[CERTREQ_ORGANIZATION]]
+CN                     = [[CERTREQ_CNAME]]
+emailAddress           = [[CERTREQ_EMAIL]]
+
