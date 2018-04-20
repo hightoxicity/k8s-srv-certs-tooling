@@ -29,11 +29,17 @@ alt_names_ref=''
 if [ ! -z "${CERTREQ_SAN}" ]; then
   echo "[alt_names]" >> /wkd/in.req
   IFS=','
-  i=1
+  i_ip=1
+  i_dns=1
   for SAN in ${CERTREQ_SAN}
   do
-    echo "DNS.${i} = ${SAN}" >> /wkd/in.req
-    i=$((i+1))
+    if expr "${SAN}" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+      echo "IP.${i_ip} = ${SAN}" >> /wkd/in.req
+      id_ip=$((i_ip+1))
+    else
+      echo "DNS.${i_dns} = ${SAN}" >> /wkd/in.req
+      i_dns=$((i_dns+1))
+    fi
   done
   alt_names_ref="subjectAltName         = @alt_names"
 fi
