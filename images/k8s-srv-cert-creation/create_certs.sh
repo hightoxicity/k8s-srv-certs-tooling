@@ -100,7 +100,14 @@ fi
 
 if [ "$(kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}')" == "Approved" ]; then
   echo "Csr approved, we create a matching secret..."
+
+  SECRET_NAME="${CERT_NAME}"
+
+  if [ ! -z "${TLS_SECRET_NAME}" ]; then
+    SECRET_NAME="${TLS_SECRET_NAME}"
+  fi
+
   kubectl get csr ${CERT_NAME} -o jsonpath='{.status.certificate}' | base64 -d > /wkd/tls.crt
-  kubectl delete secret ${CERT_NAME} || true
-  kubectl create --namespace=kube-system secret generic ${CERT_NAME} --from-file=/wkd/tls.key --from-file=/wkd/tls.crt
+  kubectl delete secret ${SECRET_NAME} || true
+  kubectl create --namespace=kube-system secret generic ${SECRET_NAME} --from-file=/wkd/tls.key --from-file=/wkd/tls.crt
 fi

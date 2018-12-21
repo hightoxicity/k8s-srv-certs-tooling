@@ -13,7 +13,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: create-example-cert
-          image: djnos/k8s-srv-cert-creation:3
+          image: djnos/k8s-srv-cert-creation:4
           imagePullPolicy: IfNotPresent
           env:
             - name: CERT_NAME
@@ -38,6 +38,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
+            - name: TLS_SECRET_NAME
+              value: ""
           volumeMounts:
             - name: workingdir
               mountPath: /wkd
