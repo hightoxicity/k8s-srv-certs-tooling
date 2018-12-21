@@ -79,10 +79,24 @@ EOF
 
 echo "Cert ${CERT_NAME} csr submitted to the cluster!"
 
-while [ "$(kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}')" == "" ]; do
-  sleep 60s
-  echo "Csr not reviewed yet!"
+while true; do
+  kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}' 2>/dev/null
+  if [ "$?" -eq 0 ]; then
+    break
+  else
+    echo "Csr status not retrievable yet!"
+  fi
+  sleep 2s
 done
+
+if [ "${MY_POD_SERVICE_ACCOUNT}" == "server-certs-admin" ]; then
+  kubectl certificate approve ${CERT_NAME}
+else
+  while [ "$(kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}')" == "" ]; do
+    sleep 20s
+    echo "Csr not reviewed yet!"
+  done
+fi
 
 if [ "$(kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}')" == "Approved" ]; then
   echo "Csr approved, we create a matching secret..."

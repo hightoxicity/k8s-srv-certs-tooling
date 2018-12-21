@@ -1,23 +1,23 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: create-example-cert
+  name: create-example-cert-submitter
   namespace: kube-system
 spec:
   template:
     metadata:
-      name: create-example-cert
+      name: create-example-cert-submitter
     spec:
       serviceAccountName: server-certs-submitter
       automountServiceAccountToken: true
       restartPolicy: OnFailure
       containers:
         - name: create-example-cert
-          image: djnos/k8s-srv-cert-creation:1
+          image: djnos/k8s-srv-cert-creation:3
           imagePullPolicy: IfNotPresent
           env:
             - name: CERT_NAME
-              value: example-cert
+              value: example-cert-submitter
             - name: CERTREQ_CNAME
               value: example-cert.myorg.com
             - name: CERTREQ_COUNTRY
@@ -34,6 +34,10 @@ spec:
               value: "1"
             - name: CERTREQ_SAN
               value: "example-cert.myorg.com,alt.example-cert.myorg.com,10.100.20.2"
+            - name: MY_POD_SERVICE_ACCOUNT
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
           volumeMounts:
             - name: workingdir
               mountPath: /wkd
