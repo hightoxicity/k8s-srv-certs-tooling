@@ -14,6 +14,12 @@ else
   kubectl delete csr ${CERT_NAME} || true
 fi
 
+TARGET_NS="kube-system"
+
+if [ ! -z "${OBJECTS_CREATED_TARGET_NS}" ]; then
+  TARGET_NS="${OBJECTS_CREATED_TARGET_NS}"
+fi
+
 cp /in.req /wkd
 
 OLDIFS=${IFS}
@@ -67,7 +73,7 @@ metadata:
 spec:
   groups:
   - system:serviceaccounts
-  - system:serviceaccounts:kube-system
+  - system:serviceaccounts:${TARGET_NS}
   - system:authenticated
   request: $(cat /wkd/tls.csr | base64 | tr -d '\n')
   usages:
@@ -109,5 +115,5 @@ if [ "$(kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}'
 
   kubectl get csr ${CERT_NAME} -o jsonpath='{.status.certificate}' | base64 -d > /wkd/tls.crt
   kubectl delete secret ${SECRET_NAME} || true
-  kubectl create --namespace=kube-system secret generic ${SECRET_NAME} --from-file=/wkd/tls.key --from-file=/wkd/tls.crt
+  kubectl create --namespace=${TARGET_NS} secret generic ${SECRET_NAME} --from-file=/wkd/tls.key --from-file=/wkd/tls.crt
 fi

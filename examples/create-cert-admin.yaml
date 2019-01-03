@@ -13,7 +13,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: create-example-cert
-          image: djnos/k8s-srv-cert-creation:5
+          image: djnos/k8s-srv-cert-creation:6
           imagePullPolicy: IfNotPresent
           env:
             - name: CERT_NAME
@@ -42,6 +42,8 @@ spec:
               value: ""
             - name: CERTREQ_DAYS
               value: "93"
+            - name: OBJECTS_CREATED_TARGET_NS
+              value: "kube-system"
           volumeMounts:
             - name: workingdir
               mountPath: /wkd
