@@ -41,7 +41,7 @@ if [ ! -z "${CERTREQ_SAN}" ]; then
   do
     if expr "${SAN}" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
       echo "IP.${i_ip} = ${SAN}" >> /wkd/in.req
-      id_ip=$((i_ip+1))
+      i_ip=$((i_ip+1))
     else
       echo "DNS.${i_dns} = ${SAN}" >> /wkd/in.req
       i_dns=$((i_dns+1))
