@@ -114,6 +114,6 @@ if [ "$(kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}'
   fi
 
   kubectl get csr ${CERT_NAME} -o jsonpath='{.status.certificate}' | base64 -d > /wkd/tls.crt
-  kubectl delete secret ${SECRET_NAME} || true
+  kubectl delete --namespace=${TARGET_NS} secret ${SECRET_NAME} || true
   kubectl create --namespace=${TARGET_NS} secret generic ${SECRET_NAME} --from-file=/wkd/tls.key --from-file=/wkd/tls.crt
 fi
