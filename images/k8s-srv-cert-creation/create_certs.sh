@@ -2,13 +2,10 @@
 set -e
 set -o pipefail
 
-FORCE_GEN=0
+FORCE_GENERATION=${FORCE_GENERATION:-0}
+EMBED_SIGNER_CERT=${EMBED_SIGNER_CERT:-0}
 
-if [ ! -z "${FORCE_GENERATION}" ]; then
-  FORCE_GEN=${FORCE_GENERATION}
-fi
-
-if [ "${FORCE_GEN}" == "0" ]; then
+if [ "${FORCE_GENERATION}" == "0" ]; then
   kubectl get csr ${CERT_NAME} && exit 0 || true
 else
   kubectl delete csr ${CERT_NAME} || true
@@ -113,7 +110,14 @@ if [ "$(kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}'
     SECRET_NAME="${TLS_SECRET_NAME}"
   fi
 
-  kubectl get csr ${CERT_NAME} -o jsonpath='{.status.certificate}' | base64 -d > /wkd/tls.crt
+  echo '' > /wkd/tls.crt
+
+  kubectl get csr ${CERT_NAME} -o jsonpath='{.status.certificate}' | base64 -d >> /wkd/tls.crt
+
+  if [ "${EMBED_SIGNER_CERT}" == "1" ]; then
+    kubectl get cm cluster-info -n kube-public -o=jsonpath='{.data.kubeconfig}' | grep 'certificate-authority-data:' | sed -E 's/^\s*certificate-authority-data:\s*(.+)$/\1/g' | base64 -d >> /wkd/tls.crt
+  fi
+
   kubectl delete --namespace=${TARGET_NS} secret ${SECRET_NAME} || true
   kubectl create --namespace=${TARGET_NS} secret generic ${SECRET_NAME} --from-file=/wkd/tls.key --from-file=/wkd/tls.crt
 fi
