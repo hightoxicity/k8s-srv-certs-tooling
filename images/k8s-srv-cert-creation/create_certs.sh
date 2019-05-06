@@ -4,6 +4,9 @@ set -o pipefail
 
 FORCE_GENERATION=${FORCE_GENERATION:-0}
 EMBED_SIGNER_CERT=${EMBED_SIGNER_CERT:-0}
+ALL_IN_CERT_FILE=${ALL_IN_CERT_FILE:-0}
+SECRET_KEY_CERT=${SECRET_KEY_CERT:-'tls.crt'}
+SECRET_KEY_KEY=${SECRET_KEY_KEY:-'tls.key'}
 
 if [ "${FORCE_GENERATION}" == "0" ]; then
   kubectl get csr ${CERT_NAME} && exit 0 || true
@@ -55,8 +58,8 @@ echo "We will use following req:"
 
 cat /wkd/in.req
 
-openssl genrsa -out /wkd/tls.key 4096
-openssl req -new -config /wkd/in.req -key /wkd/tls.key -out /wkd/tls.csr
+openssl genrsa -out /wkd/${SECRET_KEY_KEY} 4096
+openssl req -new -config /wkd/in.req -key /wkd/${SECRET_KEY_KEY} -out /wkd/tls.csr
 
 if [ "${alt_names_ref}" != "" ]; then
   openssl req -noout -text -in /wkd/tls.csr | grep DNS
@@ -110,14 +113,23 @@ if [ "$(kubectl get csr ${CERT_NAME} -o jsonpath='{.status.conditions[:1].type}'
     SECRET_NAME="${TLS_SECRET_NAME}"
   fi
 
-  echo '' > /wkd/tls.crt
+  if [ "${ALL_IN_CERT_FILE}" == "0" ]; then
+    echo '' > /wkd/${SECRET_KEY_CERT}
+  else
+    cat /wkd/${SECRET_KEY_KEY} > /wkd/${SECRET_KEY_CERT}
+  fi
 
-  kubectl get csr ${CERT_NAME} -o jsonpath='{.status.certificate}' | base64 -d >> /wkd/tls.crt
+  kubectl get csr ${CERT_NAME} -o jsonpath='{.status.certificate}' | base64 -d >> /wkd/${SECRET_KEY_CERT}
 
   if [ "${EMBED_SIGNER_CERT}" == "1" ]; then
-    kubectl get cm cluster-info -n kube-public -o=jsonpath='{.data.kubeconfig}' | grep 'certificate-authority-data:' | sed -E 's/^\s*certificate-authority-data:\s*(.+)$/\1/g' | base64 -d >> /wkd/tls.crt
+    kubectl get cm cluster-info -n kube-public -o=jsonpath='{.data.kubeconfig}' | grep 'certificate-authority-data:' | sed -E 's/^\s*certificate-authority-data:\s*(.+)$/\1/g' | base64 -d >> /wkd/${SECRET_KEY_CERT}
   fi
 
   kubectl delete --namespace=${TARGET_NS} secret ${SECRET_NAME} || true
-  kubectl create --namespace=${TARGET_NS} secret generic ${SECRET_NAME} --from-file=/wkd/tls.key --from-file=/wkd/tls.crt
+
+  if [ "${ALL_IN_CERT_FILE}" == "0" ]; then
+    kubectl create --namespace=${TARGET_NS} secret generic ${SECRET_NAME} --from-file=/wkd/${SECRET_KEY_KEY} --from-file=/wkd/${SECRET_KEY_CERT}
+  else
+    kubectl create --namespace=${TARGET_NS} secret generic ${SECRET_NAME} --from-file=/wkd/${SECRET_KEY_CERT}
+  fi
 fi
